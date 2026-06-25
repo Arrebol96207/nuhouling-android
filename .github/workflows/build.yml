@@ -24,19 +24,27 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Download Gradle Wrapper
-      run: |
-        mkdir -p gradle/wrapper
-        curl -sL "https://services.gradle.org/distributions/gradle-8.9-bin.zip" -o /tmp/gradle.zip
-        unzip -q /tmp/gradle.zip -d /tmp
-        /tmp/gradle-8.9/bin/gradle wrapper
-        rm -rf /tmp/gradle-8.9 /tmp/gradle.zip
-
-    - name: Grant execute permission
-      run: chmod +x gradlew
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: |
+        # Create gradle wrapper manually
+        mkdir -p gradle/wrapper
+        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.9-bin.zip
+        networkTimeout=10000
+        validateDistributionUrl=true
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        
+        # Download and use gradle directly
+        wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip -O /tmp/gradle.zip
+        unzip -q /tmp/gradle.zip -d /tmp
+        chmod +x /tmp/gradle-8.9/bin/gradle
+        
+        # Build with gradle
+        /tmp/gradle-8.9/bin/gradle assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
