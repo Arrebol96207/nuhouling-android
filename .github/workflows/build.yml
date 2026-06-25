@@ -22,23 +22,36 @@ jobs:
 
     - name: Setup Android SDK
       run: |
-        # Use the pre-installed SDK location
-        export ANDROID_HOME=/usr/local/lib/android/sdk
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        # Unset conflicting environment variables
+        unset ANDROID_SDK_ROOT
+        unset ANDROID_HOME
         
-        # Accept licenses
-        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        # Set our own SDK path
+        export ANDROID_HOME=$HOME/android-sdk
+        mkdir -p $ANDROID_HOME/cmdline-tools
         
-        # Install required SDK components
-        $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        # Download command line tools
+        cd $ANDROID_HOME/cmdline-tools
+        wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdtools.zip
+        unzip -q cmdtools.zip
+        mkdir -p latest
+        mv cmdline-tools/* latest/ 2>/dev/null || mv * latest/ 2>/dev/null || true
+        
+        # Accept licenses and install SDK
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+        yes | sdkmanager --licenses
+        sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
     - name: Build Debug APK
       run: |
+        # Unset conflicting environment variables
+        unset ANDROID_SDK_ROOT
+        unset ANDROID_HOME
+        
+        # Set our own paths
         export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-        export ANDROID_HOME=/usr/local/lib/android/sdk
-        export ANDROID_SDK_ROOT=$ANDROID_HOME
-        export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools
+        export ANDROID_HOME=$HOME/android-sdk
+        export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
         
         # Download and extract gradle
         wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip -O /tmp/gradle.zip
